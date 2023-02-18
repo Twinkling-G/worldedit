@@ -1,0 +1,23 @@
+using UTF-8 encoding to read!!!
+脚本作者：Twinkling
+脚本名称：genGray
+脚本简介：把选区内高度信息导出为灰度图。
+脚本版本：0.1.0
+适应范围：1.12.2以及以下，客户端、服务端脚本，大部分选区模式，未发现不可行选区模式。
+安装方法：
+	客户端情况把js文件放在.minecraft\config\worldedit\craftscripts下。
+	服务端情况把js文件放在plugins\WorldEdit\craftscripts下。
+注意事项：
+    该脚本运算时间和规模有很大的关联，因此需要更改we的脚本超时配置。
+    客户端在.minecraft\config\worldedit\worldedit.properties中，
+    服务端在config\worldedit\worldedit.properties中，
+    设置scripting-timeout的值为一个较大的值，或者-1（无限时长，我没试过），默认是3000ms。
+使用方法：
+    选区之后，输入命令，命令格式为"/cs genGray.js ["image_path"] [--flags]"。
+    图片路径用双引号包含，路径不可出现空格字符。
+    不指定图片路径时，默认保存为.minecraft目录下的terrain_output.png图片，默认路径可能可以方便方便调试。
+    flags使用"--"开头，后接着标记字符串，flags接受以下标记：
+        n : 只认自然方块。判断选区地形的表面时，只有自然方块才会被认为是地表方块。
+    选区底面为高度0。
+
+
