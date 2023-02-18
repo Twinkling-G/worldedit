@@ -18,7 +18,7 @@
 
 /*
 author:Twinkling
-version:0.1.0
+version:0.1.1
 */
 
 
@@ -36,53 +36,54 @@ importPackage(Packages.com.sk89q.worldedit.function.pattern);
 importPackage(Packages.com.sk89q.worldedit.extension.factory);
 importPackage(Packages.com.sk89q.worldedit.extension.input);
 
-
-var usage = "genTerr [image_path] <to_pattern> [<x_offset> <z_offset>] [flags] <node_type([node_argv])>*\n";
+var usage = "genTerr [\"image_path\"] [--flags] <to_pattern> [<x_offset> <z_offset>] <node_type([node_argv])>*\n";
 usage += "flags :\n";
-usage += "    -k : just check terrain height range\n";
+usage += "    k : just check terrain height range.\n";
 usage += "nodes:\n";
-usage += "    rise(offset) or r(offset)                 :\n";
-usage += "    scaleY(scale) or s(scale)                 :\n";
-usage += "    scalePY(scale) or sp(scale)               :\n";
-usage += "    scaleNY(scale) or sn(scale)               :\n";
-usage += "    overlay(flags) or o(flags)                :\n";
+usage += "    rise(offset) or r(offset) :\n";
+usage += "    scaleY(scale) or s(scale) :\n";
+usage += "    scalePY(scale) or sp(scale) :\n";
+usage += "    scaleNY(scale) or sn(scale) :\n";
+usage += "    overlay(flags) or o(flags) :\n";
 usage += "        flags :\n";
-usage += "            -n : only natural block is considered as top block\n";
-usage += "    min(flags)                                :\n";
+usage += "            n : only natural block is considered as top block.\n";
+usage += "    min(flags) :\n";
 usage += "        flags :\n";
-usage += "            -n : only natural block is considered as top block\n";
-usage += "    max(flags)                                :\n";
+usage += "            n : only natural block is considered as top block.\n";
+usage += "    max(flags) :\n";
 usage += "        flags :\n";
-usage += "            -n : only natural block is considered as top block\n";
+usage += "            n : only natural block is considered as top block.\n";
+usage += "    noise(min, max) :\n";
 usage += "    useConstPatternDepth(depth) or cpd(depth) :\n";
-usage += "    addPatternDepth(depth) or apd(depth) :\n";
+usage += "    addPatternDepth(offset) or apd(offset) :\n";
 usage += "    overlayPatternDepth(flags) or opd(flags) :\n";
 usage += "        flags :\n";
-usage += "            -n : only natural block is considered as top block\n";
+usage += "            n : only natural block is considered as top block.\n";
 usage += "    fill(flags) or f(flags) :\n";
 usage += "        flags :\n";
-usage += "            -a : remove air\n";
-usage += "            -g : disenable gradual mask\n";
-usage += "            -n : only natural block is considered as top block\n";
+usage += "            a : remove air\n";
+usage += "            g : disenable gradual mask\n";
+usage += "            n : only natural block is considered as top block.\n";
 usage += "    move(flags) or m(flags) :\n";
 usage += "        flags :\n";
-usage += "            -a : remove air\n";
-usage += "            -g : disenable gradual mask\n";
-usage += "            -n : only natural block is considered as top block\n";
+usage += "            a : remove air\n";
+usage += "            g : disenable gradual mask\n";
+usage += "            n : only natural block is considered as top block.\n";
 usage += "    compensate(flags) or c(flags) :\n";
 usage += "        flags :\n";
-usage += "            -a : remove air\n";
-usage += "            -g : disenable gradual mask\n";
-usage += "            -n : only natural block is considered as top block\n";
-
-var defaultImagePath = "terrain.png";
-context.checkArgs(1, -1, usage+"\n");
-
+usage += "            a : remove air\n";
+usage += "            g : disenable gradual mask\n";
+usage += "            n : only natural block is considered as top block.\n";
 // var log = new BufferedWriter(new FileWriter("genTerrLog.txt"));
+context.checkArgs(1, -1, usage);
+var defaultImagePath = "terrain_input.png";
 
 var localSession = context.getSession();
 var world = player.getWorld();
 var region = localSession.getRegionSelector(world).getRegion();
+if(!(region instanceof CuboidRegion)){
+	throw "genTerr works with cuboid region.\n";
+}
 var editSession = context.remember();
 var mask = localSession.getMask();
 if(mask != null){
@@ -97,7 +98,7 @@ var terrain = {
 	_bufferedImg : null,
 	_yOffset : 0,
 
-	loadImage : function(path){
+	init : function(path){
 		this._bufferedImg = ImageIO.read(new File(path));
 		this._xSize = this._bufferedImg.getWidth() - this._xOffset;
 		this._zSize = this._bufferedImg.getHeight() - this._zOffset;
@@ -232,6 +233,7 @@ var terrain = {
 
 var regionHelper = {
 	_region : null,
+	_ySize : 0,
 	_ox : 0,
 	_oy : 0,
 	_oz : 0,
@@ -239,6 +241,7 @@ var regionHelper = {
 	init : function(region){
 		this._region = region;
 		var origin = region.getMinimumPoint();
+		this._ySize = region.getHeight();
 		this._ox = origin.getX();
 		this._oy = origin.getY();
 		this._oz = origin.getZ();
@@ -249,16 +252,16 @@ var regionHelper = {
 	},
 
 	getYSize : function(){
-		return this._region.getHeight();
+		return this._ySize;
 	},
 
 	getZSize : function(){
 		return this._region.getLength();
 	},
 
-	getHighestTerrainBlock : function(x, z, minY, maxY, naturalOnly){
-		minY = minY < 0 ? 0 : this._oy + minY;
-		maxY = maxY < 0 ? 255 : this._oy + maxY;
+	getHighestTerrainBlock : function(x, z, naturalOnly){
+		var minY = this._oy - 1;
+		var maxY = this._oy + this._ySize - 1;
 		var y = editSession.getHighestTerrainBlock(this._ox + x, this._oz + z, minY, maxY, naturalOnly);
 		return y - this._oy;
 	},
@@ -297,6 +300,7 @@ var regionHelper = {
 					var point = startPoint.add(0,-y,0);
 					var block = editSession.getBlock(point);
 					affected += editSession.setBlock(point.add(0, offset, 0), block) ? 1 : 0;
+					editSession.setBlock(point,air);
 				}
 			});
 		}else if(offset < 0){
@@ -308,6 +312,7 @@ var regionHelper = {
 					var point = startPoint.add(0,y,0);
 					var block = editSession.getBlock(point);
 					affected += editSession.setBlock(point.add(0, offset, 0), block) ? 1 : 0;
+					editSession.setBlock(point,air);
 				}
 			});
 		}
@@ -315,151 +320,185 @@ var regionHelper = {
 	}
 };
 
-regionHelper.init(region);
-
-var patternFactory = WorldEdit.getInstance().getPatternFactory();
-var parserContext = new ParserContext();
-parserContext.setActor(player);
-try{
-	parserContext.setExtent(localSession.getClipboard().getClipboard());
-}catch(e){
-
-}
-// parserContext.setPreferringWildcard(true);
-// parserContext.setRestricted(true);
-parserContext.setSession(localSession);
-parserContext.setWorld(world);
-
 var justCheckTerrainRange = false;
 
 var argvOffset = 1;
 var otherArgvsLen = argv.length - 1;
-try{
-	terrain.loadImage(String(argv[argvOffset]));
-	argvOffset ++;
-	otherArgvsLen --;
-}catch(e){
-	terrain.loadImage(defaultImagePath);
-}
-
 if(otherArgvsLen > 0){
-	var pattern = patternFactory.parseFromInput(argv[argvOffset],parserContext);
-	argvOffset ++;
-	otherArgvsLen --;
-}else{
-	throw "usage: "+usage+"\n"
-		+"pattern is invaild.\n";
-}
-
-if(otherArgvsLen >= 2){
-	var result0 = parseInt(argv[argvOffset + 0]);
-	var result1 = parseInt(argv[argvOffset + 1]);
-	if(!isNaN(result0) && !isNaN(result1)){
-		if( result0 < 0 || result1 < 0){
-			throw "usage: "+usage+"\n"
-				+"x,z must be zero or positive.\n";
-		}
-		terrain.setXOffset(result0);
-		terrain.setZOffset(result1);
-		argvOffset += 2;
-		otherArgvsLen -= 2;
+	if(argv[argvOffset].equals("?")){
+		player.print("usage : " + usage);
+		throw "This is a help.\n";
 	}
 }
 
 if(otherArgvsLen > 0){
-	var flags = String(argv[argvOffset]);
-	if(flags.indexOf("(") == -1){
+	var path = argv[argvOffset];
+	if(path.charAt(0) == '\"'){
+		path = path.slice(1,-1);
+		terrain.init(path);
+		argvOffset ++;
+		otherArgvsLen --;
+	}else{
+		terrain.init(defaultImagePath);
+	}
+}
+
+if(otherArgvsLen > 0){
+	var flags = argv[argvOffset];
+	if(flags.substring(0,2).equals("--")){
 		if(flags.indexOf("k") != -1){
 			justCheckTerrainRange = true;
-		}else{
-			throw "usage: "+usage+"\n"
-				+"flag is invaild.\n"
 		}
 		argvOffset ++;
 		otherArgvsLen --;
 	}
 }
 
-
-
 if(justCheckTerrainRange){
 	player.print("range = "+terrain.getYRange()+"\n");
 }else{
+
+	var patternFactory = WorldEdit.getInstance().getPatternFactory();
+	var parserContext = new ParserContext();
+	parserContext.setActor(player);
+	try{
+		parserContext.setExtent(localSession.getClipboard().getClipboard());
+	}catch(e){
+
+	}
+	// parserContext.setPreferringWildcard(true);
+	// parserContext.setRestricted(true);
+	parserContext.setSession(localSession);
+	parserContext.setWorld(world);
+
+	if(otherArgvsLen > 0){
+		var pattern = patternFactory.parseFromInput(argv[argvOffset],parserContext);
+		argvOffset ++;
+		otherArgvsLen --;
+	}else{
+		throw "pattern is invaild.\n";
+	}
+
+	if(otherArgvsLen >= 2){
+		var result0 = parseInt(argv[argvOffset + 0]);
+		var result1 = parseInt(argv[argvOffset + 1]);
+		if(isNaN(result0) || isNaN(result1)){
+			throw "x_offset or z_offset is invaild.\n";
+		}
+
+		if( result0 < 0 || result1 < 0){
+			throw "x and z must be zero or positive.\n";
+		}
+
+		terrain.setXOffset(result0);
+		terrain.setZOffset(result1);
+		argvOffset += 2;
+		otherArgvsLen -= 2;
+	}
+
+	regionHelper.init(region);
 	var writeNodeWrapper = fillNodeWrapper;
 	var writeNodeArgv = [false,true,false];
 	var message = "generating with fill mode...\n";
 	while(otherArgvsLen > 0){
-		var parserBuf = String(argv[argvOffset]).split("(",2);
+		var parserBuf = argv[argvOffset].split("(",2);
 		var nodeType = parserBuf[0];
 		parserBuf = parserBuf[1].split(")",2);
 		var nodeArgv = parserBuf[0];
 
 		if(nodeType.equals("rise") || nodeType.equals("r")){
+			nodeArgv = parseInt(nodeArgv, 10);
+			if(isNaN(nodeArgv)){
+				throw "offset is invaild.\n";
+			}
 			player.print("rising...\n");
-			riseNode(parseInt(nodeArgv, 10)); 
+			riseNode(nodeArgv); 
 		}else if(nodeType.equals("scaleY") || nodeType.equals("s")){
+			nodeArgv = parseInt(nodeArgv, 10);
+			if(isNaN(nodeArgv) || nodeArgv < 0){
+				throw "scale is invaild.\n";
+			}
 			player.print("scaling...\n");
-			scaleYNode(parseInt(nodeArgv, 10))
+			scaleYNode(nodeArgv);
 		}else if(nodeType.equals("scalePY") || nodeType.equals("sp")){
+			nodeArgv = parseInt(nodeArgv, 10);
+			if(isNaN(nodeArgv) || nodeArgv < 0){
+				throw "scale is invaild.\n";
+			}
 			player.print("scaling positive part...\n");
-			scalePYNode(parseInt(nodeArgv, 10))
+			scalePYNode(nodeArgv);
 		}else if(nodeType.equals("scaleNY") || nodeType.equals("sn")){
+			nodeArgv = parseInt(nodeArgv, 10);
+			if(isNaN(nodeArgv) || nodeArgv < 0){
+				throw "scale is invaild.\n";
+			}
 			player.print("scaling negative part...\n");
-			scaleNYNode(parseInt(nodeArgv, 10))
+			scaleNYNode(nodeArgv);
 		}else if(nodeType.equals("overlay") || nodeType.equals("o")){
 			player.print("overlaying...\n");
-			overlayNodeFlags = String(nodeArgv);
-			overlayNode(overlayNodeFlags.indexOf("n") != -1 ? true : false);
+			overlayNode(nodeArgv.indexOf("n") != -1 ? true : false);
 		}else if(nodeType.equals("max")){
 			player.print("maximize...\n");
-			var nodeFlags = String(nodeArgv);
-			maxNode(nodeFlags.indexOf("n") != -1 ? true : false);
+			maxNode(nodeArgv.indexOf("n") != -1 ? true : false);
 		}else if(nodeType.equals("min")){
 			player.print("minimize...\n");
-			var nodeFlags = String(nodeArgv);
-			minNode(nodeFlags.indexOf("n") != -1 ? true : false);
+			minNode(nodeArgv.indexOf("n") != -1 ? true : false);
+		}else if(nodeType.equals("noise") || nodeType.equals("n")){
+			nodeArgv = nodeArgv.split(",",2);
+			nodeArgv[0] = parseInt(nodeArgv[0]);
+			nodeArgv[1] = parseInt(nodeArgv[1]);
+			if(isNaN(nodeArgv[0]) || isNaN(nodeArgv[1])){
+				throw "min or max is invaild.\n";
+			}
+			if(nodeArgv[0] > nodeArgv[1]){
+				throw "min should be not greater than max.\n";
+			}
+			player.print("noising...\n");
+			noiseNode(nodeArgv[0], nodeArgv[1]);
 		}else if(nodeType.equals("useConstPatternDepth") || nodeType.equals("cpd")){
+			var nodeArgv = parseInt(nodeArgv);
+			if(isNaN(nodeArgv) || nodeArgv < 0){
+				throw "depth is invaild.\n";
+			}
 			player.print("appling constant pattern depth...\n");
-			useConstPatternDepthNode(parseInt(nodeArgv));
+			useConstPatternDepthNode(nodeArgv);
 		}else if(nodeType.equals("addPatternDepth") || nodeType.equals("apd")){
+			var nodeArgv = parseInt(nodeArgv);
+			if(isNaN(nodeArgv)){
+				throw "offset is invaild.\n";
+			}
 			player.print("adding pattern depth...\n");
-			addPatternDepthNode(parseInt(nodeArgv));
+			addPatternDepthNode(nodeArgv);
 		}else if(nodeType.equals("overlayPatternDepthNode") || nodeType.equals("opd")){
 			player.print("overlaying pattern depth...\n");
-			var nodeFlags = String(nodeArgv)
-			overlayPatternDepthNode(nodeFlags.indexOf("n") != -1 ? true : false);
+			overlayPatternDepthNode(nodeArgv.indexOf("n") != -1 ? true : false);
 		}else if(nodeType.equals("fill") || nodeType.equals("f")){			
 			message = "generating with fill mode...\n"
-			var nodeFlags = String(nodeArgv);
 			writeNodeArgv = [
-				nodeFlags.indexOf("a") != -1 ? true : false,
-				nodeFlags.indexOf("g") != -1 ? false : true,
-				nodeFlags.indexOf("n") != -1 ? true : false];
+				nodeArgv.indexOf("a") != -1 ? true : false,
+				nodeArgv.indexOf("g") != -1 ? false : true,
+				nodeArgv.indexOf("n") != -1 ? true : false];
 			writeNodeWrapper = fillNodeWrapper;
 			break;
 		}else if(nodeType.equals("move") || nodeType.equals("m")){
 			message = "generating with move mode...\n"
-			var nodeFlags = String(nodeArgv);
 			writeNodeArgv = [
-				nodeFlags.indexOf("a") != -1 ? true : false,
-				nodeFlags.indexOf("g") != -1 ? false : true,
-				nodeFlags.indexOf("n") != -1 ? true : false];
+				nodeArgv.indexOf("a") != -1 ? true : false,
+				nodeArgv.indexOf("g") != -1 ? false : true,
+				nodeArgv.indexOf("n") != -1 ? true : false];
 			writeNodeWrapper = moveNodeWrapper;
 			break;
 		}else if(nodeType.equals("compensate") || nodeType.equals("c")){
 			message = "generating with compensate mode...\n"
-			var nodeFlags = String(nodeArgv);
 			writeNodeArgv = [
-				nodeFlags.indexOf("a") != -1 ? true : false,
-				nodeFlags.indexOf("g") != -1 ? false : true,
-				nodeFlags.indexOf("n") != -1 ? true : false];
+				nodeArgv.indexOf("a") != -1 ? true : false,
+				nodeArgv.indexOf("g") != -1 ? false : true,
+				nodeArgv.indexOf("n") != -1 ? true : false];
 			writeNodeWrapper = compensateNodeWrapper;
 			break;
 		}else{
-			throw "usage: "+usage+"\n"
-				+"unknown node : "+ nodeType +".\n";
+			throw "unknown node : "+ nodeType +".\n";
 		}
-
 		argvOffset ++;
 		otherArgvsLen --;
 	}
@@ -470,9 +509,9 @@ if(justCheckTerrainRange){
 	var endTime = new Date().getTime();
 	player.print("used "+ (endTime - beginTime) + " ms to generate.\n");
 	player.print(affected + " block(s) have been replaced.\n");
-	
-	// log.close();
+
 }
+// log.close();
 
 function fillNodeWrapper(){
 	return fillNode(
@@ -563,15 +602,13 @@ function scaleNYNode(dstYSpan){
 function overlayNode(naturalOnly){
 	var terrainXSize = terrain.getXSize();
 	var terrainZSize = terrain.getZSize();
-	var minY = -1;
-	var maxY = regionHelper.getYSize() - 1;
 
 	for(var x = 0;x < terrainXSize;x++){
 		for(var z = 0;z < terrainZSize;z++){
 			var alpha = terrain.getAlpha(x, z);
 			if(alpha > 0){
 				var terrainY = terrain.getY(x, z);
-				var worldTop = regionHelper.getHighestTerrainBlock(x, z, minY, maxY, naturalOnly);
+				var worldTop = regionHelper.getHighestTerrainBlock(x, z, naturalOnly);
 				terrain.setY(x,z,worldTop + terrainY + 1);
 			}
 			
@@ -582,15 +619,13 @@ function overlayNode(naturalOnly){
 function maxNode(naturalOnly){
 	var terrainXSize = terrain.getXSize();
 	var terrainZSize = terrain.getZSize();
-	var minY = -1;
-	var maxY = regionHelper.getYSize();
 
 	for(var x = 0;x < terrainXSize;x++){
 		for(var z = 0;z < terrainZSize;z++){
 			var alpha = terrain.getAlpha(x, z);
 			if(alpha > 0){
 				var terrainY = terrain.getY(x, z);
-				var worldTop = regionHelper.getHighestTerrainBlock(x, z, minY, maxY, naturalOnly);
+				var worldTop = regionHelper.getHighestTerrainBlock(x, z, naturalOnly);
 				if(worldTop > terrainY){
 					terrain.setY(x,z,worldTop);
 				}
@@ -602,15 +637,13 @@ function maxNode(naturalOnly){
 function minNode(naturalOnly){
 	var terrainXSize = terrain.getXSize();
 	var terrainZSize = terrain.getZSize();
-	var minY = -1;
-	var maxY = regionHelper.getYSize();
 
 	for(var x = 0;x < terrainXSize;x++){
 		for(var z = 0;z < terrainZSize;z++){
 			var alpha = terrain.getAlpha(x, z);
 			if(alpha > 0){
 				var terrainY = terrain.getY(x, z);
-				var worldTop = regionHelper.getHighestTerrainBlock(x, z, minY, maxY, naturalOnly);
+				var worldTop = regionHelper.getHighestTerrainBlock(x, z, naturalOnly);
 				if(worldTop < terrainY){
 					terrain.setY(x,z,worldTop);
 				}
@@ -619,7 +652,21 @@ function minNode(naturalOnly){
 	}
 }
 
+function noiseNode(min, max){
+	var terrainXSize = terrain.getXSize();
+	var terrainZSize = terrain.getZSize();
 
+	for(var x = 0;x < terrainXSize;x++){
+		for(var z = 0;z < terrainZSize;z++){
+			var alpha = terrain.getAlpha(x, z);
+			if(alpha > 0){
+				var terrainY = terrain.getY(x, z);
+				terrainY += Math.floor(Math.random() * (max + 1 - min)) + min;
+				terrain.setY(x, z, terrainY);
+			}
+		}
+	}
+}
 
 function useConstPatternDepthNode(patternDepth){
 	var terrainXSize = terrain.getXSize();
@@ -657,15 +704,13 @@ function addPatternDepthNode(offset){
 function overlayPatternDepthNode(naturalOnly){
 	var terrainXSize = terrain.getXSize();
 	var terrainZSize = terrain.getZSize();
-	var minY = -1;
-	var maxY = regionHelper.getYSize() - 1;
 
 	for(var x = 0;x < terrainXSize;x++){
 		for(var z = 0;z < terrainZSize;z++){
 			var alpha = terrain.getAlpha(x, z);
 			if(alpha > 0){
 				var d = terrain.getPatternDepth(x, z);
-				var worldTop = regionHelper.getHighestTerrainBlock(x, z, minY, maxY, naturalOnly);
+				var worldTop = regionHelper.getHighestTerrainBlock(x, z, naturalOnly);
 				d += worldTop + 1;
 				if(d > 255) d = 255;
 				terrain.setPatternDepth(x,z,d);
@@ -697,7 +742,7 @@ function fillNode(removeAir, gradMaskEnable, naturalOnly){
 
 			if(alpha > 0){
 				var terrainY = terrain.getY(x, z);
-				var worldTop = regionHelper.getHighestTerrainBlock(x, z, -1, regionYSize - 1, naturalOnly); 
+				var worldTop = regionHelper.getHighestTerrainBlock(x, z, naturalOnly); 
 				
 				var worldBlock = regionHelper.getBlock(x, worldTop, z);
 				var worldBlockPattern = new BlockPattern(worldBlock);
@@ -749,7 +794,7 @@ function moveNode(removeAir, gradMaskEnable, naturalOnly){
 			}
 			if(alpha > 0){
 				var terrainY = terrain.getY(x, z);
-				var worldTop = regionHelper.getHighestTerrainBlock(x, z, -1, regionYSize - 1, naturalOnly); 
+				var worldTop = regionHelper.getHighestTerrainBlock(x, z, naturalOnly); 
 				
 				var patternDepth = terrain.getPatternDepth(x, z);
 				var worldBlock = regionHelper.getBlock(x, worldTop, z);
@@ -760,22 +805,34 @@ function moveNode(removeAir, gradMaskEnable, naturalOnly){
 				toPattern.add(worldBlockPattern, 255 - alpha);
 				terrainY = Math.round(worldTop + (terrainY - worldTop) * alpha / 255); 
 				
+				var offset = terrainY - worldTop;
+
 				var fromMinY = worldTop - patternDepth + 1;
+				fromMinY = fromMinY < 0 ? 0 : fromMinY;
 				var fromMaxY = worldTop;
 
-				var toMinY = fromMinY + terrainY - worldTop;
-				var toMaxY = fromMaxY + terrainY - worldTop;
+				var toMinY = fromMinY + offset;
+				var toMaxY = fromMaxY + offset;
 
-				minY = fromMinY < 0 ? 0 : fromMinY;
-				minY = toMinY < 0 ? minY - toMinY : minY ;
-				maxY = fromMaxY;
-				maxY = toMaxY > regionYSize - 1? maxY - (toMaxY - (regionYSize - 1)) : maxY;
-				if(maxY >= minY){
-					affected += regionHelper.moveBlocksInY(x, x, minY, maxY, z, z, terrainY - worldTop);
+
+				if(offset < 0 && toMinY < 0){
+					fromMinY -= toMinY;
+					toMinY = 0;
+				}
+
+
+				if(offset > 0 && toMaxY > regionYSize - 1){
+					fromMaxY -= (toMaxY - (regionYSize - 1));
+					toMaxY = regionYSize - 1;
+				}
+
+				if(fromMaxY >= fromMinY){
+					affected += regionHelper.moveBlocksInY(x, x, fromMinY, fromMaxY, z, z, offset);
 				}
 					
-				minY = fromMinY < 0 ? 0 : minY;
-				maxY = toMinY - 1 > regionYSize - 1 ? regionYSize - 1 : toMinY - 1; 
+				var minY = fromMinY;
+				var maxY = terrainY - patternDepth;
+				maxY = maxY > regionYSize - 1 ? regionYSize - 1 : maxY;
 				if(maxY >= minY){
 					affected += regionHelper.setBlocks(x, x, minY, maxY, z, z, toPattern);
 				}
@@ -816,7 +873,7 @@ function compensateNode(removeAir, gradMaskEnable, naturalOnly){
 
 			if(alpha > 0){
 				var terrainY = terrain.getY(x, z);
-				var worldTop = regionHelper.getHighestTerrainBlock(x, z, -1, regionYSize - 1, naturalOnly); 
+				var worldTop = regionHelper.getHighestTerrainBlock(x, z, naturalOnly); 
 				
 				var patternDepth = terrain.getPatternDepth(x, z);
 				var worldBlock = regionHelper.getBlock(x, worldTop, z);
