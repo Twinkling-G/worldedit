@@ -5,9 +5,6 @@ version:0.1.0
 */
 
 importPackage(Packages.java.lang);
-importPackage(Packages.java.util);
-importPackage(Packages.java.io);
-importPackage(Packages.java.awt.image);
 
 importPackage(Packages.javax.imageio);
 
@@ -87,15 +84,15 @@ var naturalOnly = false;
 var argvOffset = 1;
 var otherArgvsLen = argv.length - 1;
 if(otherArgvsLen > 0){
-	if(argv[argvOffset].equals("?")){
+	if(String(argv[argvOffset]).equals("?")){
 		player.print("usage : " + usage);
 		throw "This is a help.\n";
 	}
 }
 
 if(otherArgvsLen > 0){
-	var path = argv[argvOffset];
-	if(path.charAt(0) == '\"'){
+	var path = String(argv[argvOffset]);
+	if(path.charAt(0).equals("\"")){
 		path = path.slice(1,-1);
 		var file = new File(path);
 		argvOffset ++;
@@ -106,7 +103,7 @@ if(otherArgvsLen > 0){
 }
 
 if(otherArgvsLen > 0){
-	var flags = argv[argvOffset];
+	var flags = String(argv[argvOffset]);
 	if(flags.substring(0,2).equals("--")){
 		if(flags.indexOf("n") != -1){
 			naturalOnly = true;

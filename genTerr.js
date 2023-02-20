@@ -18,14 +18,11 @@
 
 /*
 author:Twinkling
-version:0.1.1
+version:0.1.2
 */
 
 
-importPackage(Packages.java.lang);
-importPackage(Packages.java.util);
 importPackage(Packages.java.io);
-importPackage(Packages.java.awt.image);
 
 importPackage(Packages.javax.imageio);
 
@@ -268,7 +265,7 @@ var regionHelper = {
 
 	getBlock : function(x, y, z){
 		return worldBlock = editSession.getLazyBlock(
-			new com.sk89q.worldedit.Vector(this._ox + x, this._oy + y, this._oz + z));
+			new Vector(this._ox + x, this._oy + y, this._oz + z));
 	},
 
 	setBlock : function(x, y, z, patternOrBlock){
@@ -276,8 +273,8 @@ var regionHelper = {
 	},
 
 	setBlocks : function(minX, maxX, minY, maxY, minZ, maxZ, patternOrBlock){
-		var pos1 = new com.sk89q.worldedit.Vector(this._ox + minX, this._oy + minY, this._oz + minZ);
-		var pos2 = new com.sk89q.worldedit.Vector(this._ox + maxX, this._oy + maxY, this._oz + maxZ);
+		var pos1 = new Vector(this._ox + minX, this._oy + minY, this._oz + minZ);
+		var pos2 = new Vector(this._ox + maxX, this._oy + maxY, this._oz + maxZ);
 		var region = new CuboidRegion(world, pos1, pos2);
 		var affected = 0;
 		region.forEach(function(point){
@@ -292,8 +289,8 @@ var regionHelper = {
 		var air = new BaseBlock(BlockID.AIR);
 		var affected = 0;
 		if(offset > 0){
-			var pos1 = new com.sk89q.worldedit.Vector(this._ox + minX, this._oy + maxY, this._oz + minZ);
-			var pos2 = new com.sk89q.worldedit.Vector(this._ox + maxX, this._oy + maxY, this._oz + maxZ);
+			var pos1 = new Vector(this._ox + minX, this._oy + maxY, this._oz + minZ);
+			var pos2 = new Vector(this._ox + maxX, this._oy + maxY, this._oz + maxZ);
 			var region = new CuboidRegion(world, pos1, pos2);
 			region.forEach(function(startPoint){
 				for(var y = 0 ; y < ySize ; y ++){
@@ -304,8 +301,8 @@ var regionHelper = {
 				}
 			});
 		}else if(offset < 0){
-			var pos1 = new com.sk89q.worldedit.Vector(this._ox + minX, this._oy + minY, this._oz + minZ);
-			var pos2 = new com.sk89q.worldedit.Vector(this._ox + maxX, this._oy + minY, this._oz + maxZ);
+			var pos1 = new Vector(this._ox + minX, this._oy + minY, this._oz + minZ);
+			var pos2 = new Vector(this._ox + maxX, this._oy + minY, this._oz + maxZ);
 			var region = new CuboidRegion(world, pos1, pos2);
 			region.forEach(function(startPoint){
 				for(var y = 0 ; y < ySize ; y ++){
@@ -324,16 +321,17 @@ var justCheckTerrainRange = false;
 
 var argvOffset = 1;
 var otherArgvsLen = argv.length - 1;
+
 if(otherArgvsLen > 0){
-	if(argv[argvOffset].equals("?")){
+	if(String(argv[argvOffset]).equals("?")){
 		player.print("usage : " + usage);
 		throw "This is a help.\n";
 	}
 }
 
 if(otherArgvsLen > 0){
-	var path = argv[argvOffset];
-	if(path.charAt(0) == '\"'){
+	var path = String(argv[argvOffset]);
+	if(path.charAt(0).equals("\"")){
 		path = path.slice(1,-1);
 		terrain.init(path);
 		argvOffset ++;
@@ -344,7 +342,7 @@ if(otherArgvsLen > 0){
 }
 
 if(otherArgvsLen > 0){
-	var flags = argv[argvOffset];
+	var flags = String(argv[argvOffset]);
 	if(flags.substring(0,2).equals("--")){
 		if(flags.indexOf("k") != -1){
 			justCheckTerrainRange = true;
@@ -372,7 +370,7 @@ if(justCheckTerrainRange){
 	parserContext.setWorld(world);
 
 	if(otherArgvsLen > 0){
-		var pattern = patternFactory.parseFromInput(argv[argvOffset],parserContext);
+		var pattern = patternFactory.parseFromInput(String(argv[argvOffset]),parserContext);
 		argvOffset ++;
 		otherArgvsLen --;
 	}else{
@@ -380,20 +378,17 @@ if(justCheckTerrainRange){
 	}
 
 	if(otherArgvsLen >= 2){
-		var result0 = parseInt(argv[argvOffset + 0]);
-		var result1 = parseInt(argv[argvOffset + 1]);
-		if(isNaN(result0) || isNaN(result1)){
-			throw "x_offset or z_offset is invaild.\n";
+		var result0 = parseInt(String(argv[argvOffset + 0]));
+		var result1 = parseInt(String(argv[argvOffset + 1]));
+		if(!isNaN(result0) && !isNaN(result1)){
+			if( result0 < 0 || result1 < 0){
+				throw "x and z must be zero or positive.\n";
+			}
+			terrain.setXOffset(result0);
+			terrain.setZOffset(result1);
+			argvOffset += 2;
+			otherArgvsLen -= 2;
 		}
-
-		if( result0 < 0 || result1 < 0){
-			throw "x and z must be zero or positive.\n";
-		}
-
-		terrain.setXOffset(result0);
-		terrain.setZOffset(result1);
-		argvOffset += 2;
-		otherArgvsLen -= 2;
 	}
 
 	regionHelper.init(region);
@@ -401,7 +396,7 @@ if(justCheckTerrainRange){
 	var writeNodeArgv = [false,true,false];
 	var message = "generating with fill mode...\n";
 	while(otherArgvsLen > 0){
-		var parserBuf = argv[argvOffset].split("(",2);
+		var parserBuf = String(argv[argvOffset]).split("(",2);
 		var nodeType = parserBuf[0];
 		parserBuf = parserBuf[1].split(")",2);
 		var nodeArgv = parserBuf[0];
