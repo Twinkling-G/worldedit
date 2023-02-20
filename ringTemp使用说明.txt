@@ -2,7 +2,7 @@ using UTF-8 encoding to read!!!
 脚本作者：Twinkling
 脚本名称：ringTemp
 脚本简介：按照一格薄的选区内的模板，生成环形模板，可以保存为schematic文件或不生成在世界里。
-脚本版本：0.1.0
+脚本版本：0.2.0
 适应范围：1.12.2以及以下，客户端、服务端脚本，矩形选区。
 安装方法：
 	客户端情况把js文件放在.minecraft\config\worldedit\craftscripts下。
@@ -17,15 +17,21 @@ using UTF-8 encoding to read!!!
         生成7x13模板的200x200环形模板在世界中生成环形模板的情况耗时4s以内。
         生成7x13模板的2000x2000环形模板在取消在世界中生成环形模板的情况耗时20s以内。
 使用方法：
-    选区之后，输入命令，命令格式为"/cs ringTemp <outer_x_diameter> <outer_z_diameter> [--flags] [schematic_path]"。
-    outer_x_diameter为环形模板的x轴直径，outer_z_diameter为环形模板的z轴直径，直径可为奇数或偶数。
+    选区之后，输入命令，命令格式为"/cs ringTemp <outer_x_radius> <outer_z_radius> [<pos_x_offset> <pos_z_offset>] [--flags] [schematic_path]"。
+    会以玩家位置或者x-z方块网格对齐的玩家位置或者第一位置为圆心（圆心可再偏移）生成一个环形模板。
+    outer_x_radius为环形模板的x轴半径，outer_z_radius为环形模板的z轴半径，半径可为浮点数。
+    pos_x_offset为圆心x轴偏移，pos_z_offset为圆心z轴偏移，可在原始圆心位置的基础上将圆心偏移，偏移量可为浮点数。
     世界中生成环形模板占用的环形空间外的其他地方不会受到影响。
     flags使用"--"开头，后接着标记字符串，flags接受以下标记：
         o : 用金块标记环形模板中心。
         b : 使用坐标从大到小的顺序读取模板。 
         s : 保存为schematic文件。
         g : 取消在世界中生成环形模板。
+        a : 取消圆心和方块x-z网格自动对齐，直接使用玩家的浮点数坐标。
     schematic_path为schematic文件保存路径，当使用s标记时，必须指明该项参数。
     文件名不需要指明后缀，路径不可出现空格字符。
+更新内容：
+    1.优化了椭圆环生成算法，支持生成非对齐圆心和浮点数半径的椭圆环。
+    2.增加了非对齐圆心和浮点数半径的环形模板生成功能。
 
 
